@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Modelación de Layout</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            border-bottom-color: #2563EB;
+            color: #1E3A8A;
+            font-weight: 600;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .table-input {
+            background-color: #FEFCE8; /* Amarillo claro para inputs */
+            border: 1px solid #FDE047; /* Borde amarillo */
+            text-align: right;
+        }
+        .table-select {
+            background-color: #FEFCE8;
+            border: 1px solid #FDE047;
+        }
+        .calculated-cell {
+            background-color: #F3F4F6;
+            text-align: right;
+            font-weight: 500;
+        }
+        .result-card {
+            background-color: #EFF6FF; /* Azul muy claro */
+            border-left: 4px solid #2563EB;
+        }
+        .balance-card-surplus {
+             background-color: #F0FDF4; /* Verde muy claro */
+             border-left: 4px solid #22C55E;
+        }
+        .balance-card-deficit {
+             background-color: #FEF2F2; /* Rojo muy claro */
+             border-left: 4px solid #EF4444;
+        }
+        .btn-primary {
+            background-color: #1D4ED8;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563EB;
+        }
+        .btn-secondary {
+            background-color: #6B7280;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #808791;
+        }
+        .btn-danger {
+            background-color: #DC2626;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #EF4444;
+        }
+        .btn-icon {
+            background-color: #E5E7EB;
+            color: #4B5563;
+        }
+        .btn-icon:hover {
+            background-color: #D1D5DB;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Pantalla de Login (Temporalmente oculta) -->
+    <div id="login-screen" class="fixed inset-0 bg-gray-200 flex items-center justify-center z-50 hidden">
+        <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Iniciar Sesión</h2>
+            <p class="text-center text-gray-500 mb-6">Acceso al Panel de Modelación</p>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+                    <input type="text" id="username" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <input type="password" id="password" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Ingresar
+                </button>
+                <p id="login-error" class="text-red-500 text-sm mt-4 text-center h-5"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal de la Aplicación -->
+    <div id="app-container">
+        <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+            <!-- Header optimizado para móvil -->
+            <header class="mb-6">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="text-center sm:text-left">
+                        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Panel de Modelación de Layout</h1>
+                        <p class="mt-1 text-base sm:text-lg text-gray-600">Modelo de dimensionamiento logístico.</p>
+                    </div>
+                    <button id="logout-btn" class="w-full sm:w-auto btn-secondary py-2 px-4 rounded-md text-sm font-medium">Cerrar Sesión</button>
+                </div>
+            </header>
+
+            <!-- Contenedor de Pestañas -->
+            <div class="bg-white rounded-xl shadow-lg">
+                <!-- Navegación de Pestañas -->
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-2 sm:space-x-6 px-4 sm:px-6 overflow-x-auto" aria-label="Tabs">
+                        <button id="tab-params-btn" class="tab-button active shrink-0 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent">
+                            Parámetros
+                        </button>
+                        <button id="tab-infra-btn" class="tab-button shrink-0 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent">
+                            Config. Infraestructura
+                        </button>
+                        <button id="tab-results-btn" class="tab-button shrink-0 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent">
+                            Resultados
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Contenido de Pestañas -->
+                <div class="p-4 sm:p-6">
+                    <!-- Pestaña de Parámetros -->
+                    <div id="tab-params-content" class="tab-content active">
+                        <div class="space-y-8">
+                            <!-- Parámetros Generales -->
+                            <div>
+                                <h2 class="text-xl font-semibold mb-4 text-gray-800">Parámetros Generales</h2>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div>
+                                        <label for="sucursal" class="block text-sm font-medium text-gray-700">Sucursal</label>
+                                        <select id="sucursal" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                            <option>Zona Norte - Iquique</option><option selected>Zona Norte - Calama</option><option>Zona Norte - Antofagasta</option><option>Zona Norte - Copiapó</option><option>Zona Norte - La serena</option><option>Zona centro - SCL - Libertad</option><option>Zona centro - SCL - CD Lampa</option><option>Zona centro - Viña del Mar</option><option>Zona centro - Rancagua</option><option>Zona sur - Concepción</option><option>Zona sur - Los Ángeles</option><option>Zona sur - Castro</option><option>Zona sur - Valdivia</option><option>Zona sur - Puerto Montt</option><option>Zona sur - Temuco</option><option>Zona sur - Punta Arenas</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="siteArea" class="block text-sm font-medium text-gray-700">Área del sitio (m²)</label>
+                                        <input type="number" id="siteArea" value="10000" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="workDays" class="block text-sm font-medium text-gray-700">Días Hab. Mes</label>
+                                        <input type="number" id="workDays" value="24" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="workHours" class="block text-sm font-medium text-gray-700">Hrs hab. Día</label>
+                                        <input type="number" id="workHours" value="8" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Parámetros de Simulación de Zonas -->
+                            <div id="zone-parameters-container">
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                                    <h2 class="text-xl font-semibold text-gray-800">Parámetros de Simulación (Zonas)</h2>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                         <label for="load-zones-file" class="btn-secondary py-2 px-4 rounded-md text-sm font-medium cursor-pointer">Cargar Excel</label>
+                                         <input type="file" id="load-zones-file" class="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+                                         <a id="download-zone-template-btn" href="#" class="btn-icon p-2 rounded-full" title="Descargar plantilla de zonas">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                                            </svg>
+                                         </a>
+                                        <button id="add-zone-btn" class="btn-primary py-2 px-4 rounded-md text-sm font-medium">Añadir Zona</button>
+                                    </div>
+                                </div>
+                                <div id="zones-list" class="space-y-6">
+                                    <!-- Zone cards will be injected here by JS -->
+                                </div>
+                            </div>
+                            
+                            <!-- Input Flujos In / Out -->
+                            <div>
+                                <h2 class="text-xl font-semibold mb-4 text-gray-800">Input Flujos In / Out por Zona</h2>
+                                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                                    <table id="flowsTable" class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Zona</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unid/día</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ventana Horaria</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Carga de Archivos -->
+                            <div>
+                                 <h2 class="text-xl font-semibold mb-4 text-gray-800">Carga de Archivos</h2>
+                                 <div class="flex flex-col sm:flex-row gap-6">
+                                    <div class="flex items-center gap-2">
+                                        <label for="skuFile" class="w-auto inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L6.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                                            Adjuntar maestra SKU
+                                        </label>
+                                        <input type="file" id="skuFile" class="hidden"><p id="fileName" class="text-sm text-gray-500">Ningún archivo.</p>
+                                        <a id="download-sku-template-btn" href="#" class="btn-icon p-2 rounded-full" title="Descargar plantilla de SKU">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                                            </svg>
+                                         </a>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <label for="forecastFile" class="w-auto inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" /></svg>
+                                            Adjuntar Pronóstico Venta
+                                        </label>
+                                        <input type="file" id="forecastFile" class="hidden"><p id="forecastFileName" class="mt-2 text-sm text-gray-500">Ningún archivo.</p>
+                                    </div>
+                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña de Configuración de Infraestructura -->
+                    <div id="tab-infra-content" class="tab-content">
+                        <div class="space-y-8">
+                            <div id="infra-config-inputs">
+                                <h2 class="text-xl font-semibold mb-4 text-gray-800">Configuración de Infraestructura y Layout</h2>
+                                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                                    <table id="infraConfigTable" class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo Infraestructura</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Largo (cm)</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ancho (cm)</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alto (cm)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div id="aisle-config-inputs">
+                                <h2 class="text-xl font-semibold mb-4 text-gray-800">Parámetros de Pasillos y Flujos (Norma Internacional)</h2>
+                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label for="mainAisle" class="block text-sm font-medium text-gray-700">Ancho Pasillo Principal (m)</label>
+                                        <input type="number" step="0.1" id="mainAisle" value="3.5" class="table-input mt-1 block w-full rounded-md p-2">
+                                    </div>
+                                    <div>
+                                        <label for="secondaryAisle" class="block text-sm font-medium text-gray-700">Ancho Pasillo Secundario (m)</label>
+                                        <input type="number" step="0.1" id="secondaryAisle" value="2.8" class="table-input mt-1 block w-full rounded-md p-2">
+                                    </div>
+                                    <div>
+                                        <label for="clearHeight" class="block text-sm font-medium text-gray-700">Altura libre bajo viga (m)</label>
+                                        <input type="number" step="0.1" id="clearHeight" value="10.0" class="table-input mt-1 block w-full rounded-md p-2">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña de Resultados -->
+                    <div id="tab-results-content" class="tab-content">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div class="result-card p-5 rounded-lg">
+                                <h4 class="font-semibold text-gray-700">Total M² Asignados (Actual)</h4>
+                                <p id="totalAreaAssigned" class="text-2xl sm:text-3xl font-bold text-blue-800 mt-2">0 m²</p>
+                            </div>
+                            <div class="result-card p-5 rounded-lg">
+                                <h4 class="font-semibold text-gray-700">Total M² Ocupados (Objetivo)</h4>
+                                <p id="totalAreaOccupied" class="text-2xl sm:text-3xl font-bold text-blue-800 mt-2">0 m²</p>
+                            </div>
+                            <div class="result-card p-5 rounded-lg">
+                                <h4 class="font-semibold text-gray-700">Total M² Requeridos (Modelo)</h4>
+                                <p id="totalAreaRequired" class="text-2xl sm:text-3xl font-bold text-blue-800 mt-2">0 m²</p>
+                            </div>
+                            <div id="balanceCard" class="p-5 rounded-lg">
+                                <h4 class="font-semibold text-gray-700">Balance M² (Actual vs. Requerido)</h4>
+                                <p id="areaBalance" class="text-2xl sm:text-3xl font-bold mt-2">0 m²</p>
+                            </div>
+                        </div>
+                        <div class="mt-8">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-800">Detalle de Ocupación por Zona</h3>
+                            <div id="zoneDetailsContainer" class="space-y-2">
+                               <!-- Los detalles se agregarán aquí -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Credenciales de Usuario ---
+        const users = {
+            "Admin": "Logistica425-",
+            "demo.guest": "demo2025"
+        };
+        
+        // --- Datos Iniciales ---
+        let zoneData = [
+            { 
+                name: 'Recepción', 
+                m2_actual: 1000, 
+                storageTypes: [
+                    { type: 'Piso', infraQty: 100, occupancy: 75 }
+                ],
+                flow: { units: 300, window: '08:00 a 18:00' }
+            },
+            { 
+                name: 'Almacén', 
+                m2_actual: 4000, 
+                storageTypes: [
+                    { type: 'Racks', infraQty: 250, occupancy: 90 },
+                    { type: 'Pallet', infraQty: 50, occupancy: 85 }
+                ],
+                flow: { units: 1200, window: '08:00 a 18:00' }
+            },
+            { 
+                name: 'Patio', 
+                m2_actual: 5000, 
+                storageTypes: [
+                    { type: 'Cantilever', infraQty: 40, occupancy: 85 }
+                ],
+                flow: { units: 150, window: '09:00 a 17:00' }
+            },
+        ];
+        let infraConfigData = [
+            { type: 'Racks', length: 270, width: 120, height: 900 },
+            { type: 'Estantería', length: 200, width: 60, height: 250 },
+            { type: 'Cantilever', length: 300, width: 150, height: 600 },
+            { type: 'Piso', length: 100, width: 100, height: 0 },
+            { type: 'Pallet', length: 120, width: 100, height: 150 },
+        ];
+        const storageTypes = ['Racks', 'Estantería', 'Cantilever', 'Piso', 'Pallet'];
+
+        // --- Lógica de Autenticación ---
+        const loginScreen = document.getElementById('login-screen');
+        const appContainer = document.getElementById('app-container');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (users[username] && users[username] === password) {
+                sessionStorage.setItem('isLoggedIn', 'true');
+                loginScreen.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                initializeApplication();
+            } else {
+                loginError.textContent = 'Usuario o contraseña incorrectos.';
+                setTimeout(() => loginError.textContent = '', 3000);
+            }
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.removeItem('isLoggedIn');
+            loginScreen.classList.remove('hidden');
+            loginScreen.classList.add('flex');
+            appContainer.classList.add('hidden');
+        });
+
+        // --- Lógica de Pestañas ---
+        const tabs = {
+            paramsBtn: document.getElementById('tab-params-btn'),
+            infraBtn: document.getElementById('tab-infra-btn'),
+            resultsBtn: document.getElementById('tab-results-btn'),
+            paramsContent: document.getElementById('tab-params-content'),
+            infraContent: document.getElementById('tab-infra-content'),
+            resultsContent: document.getElementById('tab-results-content'),
+        };
+
+        function switchTab(activeBtn) {
+            Object.values(tabs).forEach(el => {
+                if (el.tagName === 'BUTTON') el.classList.remove('active');
+                else el.classList.remove('active');
+            });
+            
+            activeBtn.classList.add('active');
+            if (activeBtn === tabs.paramsBtn) tabs.paramsContent.classList.add('active');
+            if (activeBtn === tabs.infraBtn) tabs.infraContent.classList.add('active');
+            if (activeBtn === tabs.resultsBtn) tabs.resultsContent.classList.add('active');
+        }
+        
+        // --- Renderizado de Tablas ---
+        function renderZoneParameters() {
+            const zonesList = document.getElementById('zones-list');
+            zonesList.innerHTML = '';
+            zoneData.forEach((zone, zoneIndex) => {
+                const zoneCard = document.createElement('div');
+                zoneCard.className = 'p-4 border border-gray-200 rounded-lg';
+                
+                let storageRowsHTML = '';
+                zone.storageTypes.forEach((storage, storageIndex) => {
+                    const selectedTypeOptions = storageTypes.map(type => `<option value="${type}" ${storage.type === type ? 'selected' : ''}>${type}</option>`).join('');
+                    storageRowsHTML += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2">
+                                <select data-zone-index="${zoneIndex}" data-storage-index="${storageIndex}" data-field="type" class="table-select mt-1 block w-full rounded-md p-2 text-sm">
+                                    ${selectedTypeOptions}
+                                </select>
+                            </td>
+                            <td class="px-4 py-2"><input type="number" value="${storage.infraQty}" data-zone-index="${zoneIndex}" data-storage-index="${storageIndex}" data-field="infraQty" class="table-input mt-1 block w-full rounded-md p-2 text-sm"></td>
+                            <td class="px-4 py-2"><input type="number" value="${storage.occupancy}" data-zone-index="${zoneIndex}" data-storage-index="${storageIndex}" data-field="occupancy" class="table-input mt-1 block w-full rounded-md p-2 text-sm"></td>
+                            <td class="px-4 py-2 text-center">
+                                <button class="btn-danger p-1 rounded-full delete-storage-btn" data-zone-index="${zoneIndex}" data-storage-index="${storageIndex}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                zoneCard.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+                        <div class="flex items-center gap-4">
+                            <input type="text" value="${zone.name}" data-zone-index="${zoneIndex}" data-field="name" class="text-lg font-semibold text-gray-900 border-b-2 border-transparent focus:border-blue-500 focus:outline-none w-full sm:w-auto">
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm font-medium text-gray-500 shrink-0">M2 Actual:</label>
+                                <input type="number" value="${zone.m2_actual}" data-zone-index="${zoneIndex}" data-field="m2_actual" class="table-input w-28 rounded-md p-2 text-sm">
+                            </div>
+                        </div>
+                        <button class="btn-danger p-2 rounded-md delete-zone-btn w-full sm:w-auto" data-zone-index="${zoneIndex}">Eliminar Zona</button>
+                    </div>
+                    <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                        <table class="min-w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo Almacenamiento</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cant. Infraestructura</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">% Ocup. Objetivo</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                ${storageRowsHTML}
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn-secondary mt-3 py-1 px-3 rounded-md text-xs font-medium add-storage-btn" data-zone-index="${zoneIndex}">+ Añadir tipo</button>
+                `;
+                zonesList.appendChild(zoneCard);
+            });
+            zonesList.addEventListener('input', handleZoneInputChange);
+            document.querySelectorAll('.add-storage-btn').forEach(btn => btn.addEventListener('click', addStorageType));
+            document.querySelectorAll('.delete-zone-btn').forEach(btn => btn.addEventListener('click', deleteZone));
+            document.querySelectorAll('.delete-storage-btn').forEach(btn => btn.addEventListener('click', deleteStorageType));
+        }
+        
+        function renderFlowsTable() {
+            const tableBody = document.querySelector('#flowsTable tbody');
+            tableBody.innerHTML = '';
+            zoneData.forEach((zone, zoneIndex) => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${zone.name}</td>
+                    <td class="px-6 py-4"><input type="number" value="${zone.flow.units}" data-zone-index="${zoneIndex}" data-field="units" class="table-input mt-1 block w-full rounded-md p-2"></td>
+                    <td class="px-6 py-4"><input type="text" value="${zone.flow.window}" data-zone-index="${zoneIndex}" data-field="window" class="table-input mt-1 block w-full rounded-md p-2"></td>
+                `;
+            });
+            tableBody.addEventListener('input', handleFlowInputChange);
+        }
+
+        function renderInfraConfigTable() {
+            const tableBody = document.querySelector('#infraConfigTable tbody');
+            tableBody.innerHTML = '';
+            infraConfigData.forEach((data, index) => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${data.type}</td>
+                    <td class="px-6 py-4"><input type="number" value="${data.length}" data-index="${index}" data-field="length" class="table-input mt-1 block w-full rounded-md p-2"></td>
+                    <td class="px-6 py-4"><input type="number" value="${data.width}" data-index="${index}" data-field="width" class="table-input mt-1 block w-full rounded-md p-2"></td>
+                    <td class="px-6 py-4"><input type="number" value="${data.height}" data-index="${index}" data-field="height" class="table-input mt-1 block w-full rounded-md p-2"></td>
+                `;
+            });
+        }
+
+        // --- Manejo de Inputs y Acciones ---
+        function handleZoneInputChange(event) {
+            const { zoneIndex, storageIndex, field } = event.target.dataset;
+            if (storageIndex !== undefined) { 
+                zoneData[zoneIndex].storageTypes[storageIndex][field] = event.target.value;
+            } else { 
+                zoneData[zoneIndex][field] = event.target.value;
+                if(field === 'name') {
+                    renderFlowsTable(); // Re-render flow table if zone name changes
+                }
+            }
+            calculateAndUpdate();
+        }
+        function handleFlowInputChange(event) {
+            const { zoneIndex, field } = event.target.dataset;
+            zoneData[zoneIndex].flow[field] = event.target.value;
+        }
+        function handleInfraConfigChange(event) {
+            const { index, field } = event.target.dataset;
+            infraConfigData[index][field] = event.target.value;
+            calculateAndUpdate();
+        }
+        function addZone() {
+            zoneData.push({ name: 'Nueva Zona', m2_actual: 0, storageTypes: [{ type: 'Piso', infraQty: 0, occupancy: 75 }], flow: { units: 0, window: 'N/A' } });
+            renderZoneParameters();
+            renderFlowsTable();
+            calculateAndUpdate();
+        }
+        function addStorageType(event) {
+            const { zoneIndex } = event.target.dataset;
+            zoneData[zoneIndex].storageTypes.push({ type: 'Piso', infraQty: 0, occupancy: 75 });
+            renderZoneParameters();
+            calculateAndUpdate();
+        }
+        function deleteZone(event) {
+            const { zoneIndex } = event.currentTarget.dataset;
+            zoneData.splice(zoneIndex, 1);
+            renderZoneParameters();
+            renderFlowsTable();
+            calculateAndUpdate();
+        }
+        function deleteStorageType(event) {
+            const { zoneIndex, storageIndex } = event.currentTarget.dataset;
+            zoneData[zoneIndex].storageTypes.splice(storageIndex, 1);
+            renderZoneParameters();
+            calculateAndUpdate();
+        }
+        function setupZoneTemplateDownload() {
+            const downloadBtn = document.getElementById('download-zone-template-btn');
+            const csvContent = "ZoneName,M2_Actual,StorageType,InfraQty,Occupancy\nRecepción,1000,Piso,100,75\nAlmacén,4000,Racks,250,90\nAlmacén,4000,Pallet,50,85\nPatio,5000,Cantilever,40,85";
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            downloadBtn.href = url;
+            downloadBtn.setAttribute('download', 'plantilla_zonas.csv');
+        }
+        function setupSkuTemplateDownload() {
+            const downloadBtn = document.getElementById('download-sku-template-btn');
+            const headers = [
+                "Code SKU", "Nombre SKU", "Peso (kg)", "Largo", "Ancho", "Alto",
+                "Tipo almacenamiento", "Stock actual (Unid)", "Clasificacion ABC Pareto",
+                "Rotacion en dias de inventario", "Tipo de temporada", "Dias en inventario"
+            ];
+            const sampleRow = [
+                "SKU-001", "Producto Ejemplo", "15.5", "40", "30", "25",
+                "Pallet", "500", "A", "30", "Alta", "15"
+            ];
+            const csvContent = headers.join(',') + '\n' + sampleRow.join(',');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            downloadBtn.href = url;
+            downloadBtn.setAttribute('download', 'plantilla_maestra_sku.csv');
+        }
+
+        // --- Lógica de Cálculo y Actualización ---
+        function calculateAndUpdate() {
+            let totalAreaAssigned = 0;
+            let totalAreaRequired = 0;
+            let totalAreaOccupied = 0;
+            const zoneDetailsContainer = document.getElementById('zoneDetailsContainer');
+            zoneDetailsContainer.innerHTML = '';
+            
+            const mainAisleWidth = parseFloat(document.getElementById('mainAisle').value) || 0;
+            const secondaryAisleWidth = parseFloat(document.getElementById('secondaryAisle').value) || 0;
+
+            zoneData.forEach(zone => {
+                const m2_actual = parseFloat(zone.m2_actual) || 0;
+                let m2RequiredForZone = 0;
+                let occupiedM2ForZone = 0;
+
+                zone.storageTypes.forEach(storage => {
+                    const infraQty = parseFloat(storage.infraQty) || 0;
+                    const occupancy = parseFloat(storage.occupancy) || 0;
+                    const infraConfig = infraConfigData.find(ic => ic.type === storage.type);
+                    
+                    if (infraConfig) {
+                        const lengthM = (parseFloat(infraConfig.length) || 0) / 100;
+                        const widthM = (parseFloat(infraConfig.width) || 0) / 100;
+                        const footprint = lengthM * widthM;
+                        
+                        let aisleArea = 0;
+                        if (storage.type === 'Racks' || storage.type === 'Cantilever' || storage.type === 'Pallet') {
+                            aisleArea = lengthM * mainAisleWidth;
+                        } else if (storage.type === 'Estantería') {
+                            aisleArea = lengthM * secondaryAisleWidth;
+                        }
+                        
+                        const totalM2PerUnit = footprint + aisleArea;
+                        const requiredForThisType = infraQty * totalM2PerUnit;
+                        m2RequiredForZone += requiredForThisType;
+                        occupiedM2ForZone += requiredForThisType * (occupancy / 100);
+                    }
+                });
+                
+                totalAreaAssigned += m2_actual;
+                totalAreaRequired += m2RequiredForZone;
+                totalAreaOccupied += occupiedM2ForZone;
+
+                const detailHTML = `
+                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-md">
+                        <span class="font-medium text-sm">${zone.name}</span>
+                        <span class="text-sm font-semibold">${m2RequiredForZone.toLocaleString('es-CL', { maximumFractionDigits: 0 })} m² (Req) vs ${m2_actual.toLocaleString('es-CL')} m² (Actual)</span>
+                    </div>`;
+                zoneDetailsContainer.innerHTML += detailHTML;
+            });
+
+            const areaBalance = totalAreaAssigned - totalAreaRequired;
+
+            // Actualizar tarjetas de resultados
+            document.getElementById('totalAreaAssigned').textContent = totalAreaAssigned.toLocaleString('es-CL', { maximumFractionDigits: 0 }) + ' m²';
+            document.getElementById('totalAreaRequired').textContent = totalAreaRequired.toLocaleString('es-CL', { maximumFractionDigits: 0 }) + ' m²';
+            document.getElementById('totalAreaOccupied').textContent = totalAreaOccupied.toLocaleString('es-CL', { maximumFractionDigits: 0 }) + ' m²';
+            document.getElementById('areaBalance').textContent = areaBalance.toLocaleString('es-CL', { maximumFractionDigits: 0 }) + ' m²';
+            
+            const balanceCard = document.getElementById('balanceCard');
+            balanceCard.classList.remove('balance-card-surplus', 'balance-card-deficit');
+            const balanceText = document.getElementById('areaBalance');
+            balanceText.classList.remove('text-green-600', 'text-red-600');
+            if(areaBalance >= 0) {
+                balanceCard.classList.add('balance-card-surplus');
+                balanceText.classList.add('text-green-600');
+            } else {
+                balanceCard.classList.add('balance-card-deficit');
+                balanceText.classList.add('text-red-600');
+            }
+        }
+
+        // --- Función de Inicialización de la App ---
+        function initializeApplication() {
+            // Setup de listeners de la app principal
+            tabs.paramsBtn.addEventListener('click', () => switchTab(tabs.paramsBtn));
+            tabs.infraBtn.addEventListener('click', () => switchTab(tabs.infraBtn));
+            tabs.resultsBtn.addEventListener('click', () => switchTab(tabs.resultsBtn));
+            document.getElementById('skuFile').addEventListener('change', e => document.getElementById('fileName').textContent = e.target.files[0]?.name || 'Ningún archivo.');
+            document.getElementById('forecastFile').addEventListener('change', e => document.getElementById('forecastFileName').textContent = e.target.files[0]?.name || 'Ningún archivo.');
+            document.getElementById('infra-config-inputs').addEventListener('input', handleInfraConfigChange);
+            document.getElementById('aisle-config-inputs').addEventListener('input', calculateAndUpdate);
+            document.getElementById('add-zone-btn').addEventListener('click', addZone);
+            
+            // Renderizado inicial
+            renderZoneParameters();
+            renderFlowsTable();
+            renderInfraConfigTable();
+            setupZoneTemplateDownload();
+            setupSkuTemplateDownload();
+            calculateAndUpdate();
+            switchTab(tabs.paramsBtn);
+        }
+
+        // --- Verificación de Sesión al Cargar la Página ---
+        window.onload = () => {
+            // Para desarrollo, saltar el login.
+            // Para producción, comentar la siguiente línea y descomentar el bloque 'else'.
+            initializeApplication();
+
+            /*
+            // Lógica de Login para producción
+            if (sessionStorage.getItem('isLoggedIn') === 'true') {
+                loginScreen.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                initializeApplication();
+            } else {
+                loginScreen.classList.remove('hidden');
+                loginScreen.classList.add('flex');
+                appContainer.classList.add('hidden');
+            }
+            */
+        };
+    </script>
+</body>
+</html>
